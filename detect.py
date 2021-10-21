@@ -350,8 +350,13 @@ def detect(save_img=False):
                         continue
                       max_value = max(all_area)
                       max_idx = all_area.index(max_value)
-                      getOrientation(contours[max_idx], crop_img)
+                      angle = getOrientation(contours[max_idx], crop_img)
                       im0[y:y+ h, x:x + w] = crop_img
+
+                      cx = int((coor[0] + coor[2]) / 2.0)
+                      cy = int((coor[1] + coor[3]) / 2.0)
+
+                      print("Central Point (x,y) = ({},{})  Rotation Angle = {}").format(cx,cy,angle)
                   
                   cv2.rectangle(im0, (int(coor[0]), int(coor[1])), (int(coor[2]), int(coor[3])), (0, 255, 0), 2)
 
