@@ -356,7 +356,7 @@ def detect(save_img=False):
                       cx = int((coor[0] + coor[2]) / 2.0)
                       cy = int((coor[1] + coor[3]) / 2.0)
 
-                      print("Central Point (x,y) = ({},{})  Rotation Angle = {}").format(cx,cy,angle)
+                      print("Central Point (x,y) = ({},{})  Rotation Angle = {}".format(cx,cy,angle))
                   
                   cv2.rectangle(im0, (int(coor[0]), int(coor[1])), (int(coor[2]), int(coor[3])), (0, 255, 0), 2)
 
