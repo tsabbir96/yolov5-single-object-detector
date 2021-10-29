@@ -1,10 +1,12 @@
 import argparse
-
+import warnings
+warnings.filterwarnings("ignore")
 from utils.datasets import *
 from utils.utils import *
 
 import cv2
 from math import atan2, cos, sin, sqrt, pi
+from plyfile import PlyData, PlyElement
 import numpy as np
 
 # import the necessary packages
@@ -207,8 +209,43 @@ def getOrientation(pts, img):
     cv2.putText(img, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
     
     return label
- 
 
+def read_ply(filename):
+    """ read XYZ point cloud from filename PLY file """
+    plydata = PlyData.read(filename)
+    x = np.asarray(plydata.elements[0].data['x'])
+    y = np.asarray(plydata.elements[0].data['y'])
+    z = np.asarray(plydata.elements[0].data['z'])
+    return np.stack([x,y,z], axis=1)
+
+def getTopLeft(pts):
+    return np.asarray([np.amin(pts[:,0]), np.amin(pts[:,1])])
+
+def align_to_origin(topLeft, coors):
+    coors[:, 0] = coors[:, 0] - topLeft[0]
+    coors[:, 1] = coors[:, 1] - topLeft[1]
+    return coors
+
+def point_in_circle(centre, point, r):
+  d = math.sqrt((centre[0] - point[0])**2  +  (centre[0] - point[0])**2)
+  if d < r:
+    return True
+  else:
+    return False
+
+def transform_point_to_3D(point, origin3D, scaleRatio):
+    x3D = origin3D[0] + point[0] / scaleRatio[0]
+    y3D = origin3D[1] + point[1] / scaleRatio[1]
+    return [x3D, y3D]
+
+def get_mean_depth(coors, point3D, r):
+    depths = []
+    for each_point in coors:
+      if(point_in_circle(point3D, each_point, r)):
+        depth = each_point[2]
+        depths.append(depth)
+    mean_depth = np.mean(depths)
+    return mean_depth
 
 def detect(save_img=False):
 
@@ -287,6 +324,17 @@ def detect(save_img=False):
 
         # Process detections
         first_object = True
+        
+        ply_coors =  read_ply("/content/yolov5-single-object-detector/sample_img/3D/" + path.split('/')[-1].split('.')[0] + ".ply")
+        ply_coors = ply_coors.astype(int)
+
+        origin3D =  getTopLeft(ply_coors)
+        ply_coors = align_to_origin(origin3D, ply_coors)
+
+        scaleRatio = [5.7, 5.7]
+
+        
+        
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
                 p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
@@ -356,7 +404,13 @@ def detect(save_img=False):
                       cx = int((coor[0] + coor[2]) / 2.0)
                       cy = int((coor[1] + coor[3]) / 2.0)
 
-                      print("Central Point (x,y) = ({},{})  Rotation Angle = {}".format(cx,cy,angle))
+                      point2D = [cx, cy]
+
+                      origin3D = [0, 0]
+                      point3D = transform_point_to_3D(point2D, origin3D, scaleRatio)
+                      mean_depth = get_mean_depth(ply_coors, point3D, 50)
+
+                      print("Central Point (x,y) = ({},{})  Mean Depth = {}  Rotation Angle = {}".format(cx,cy,mean_depth,angle))
                   
                   cv2.rectangle(im0, (int(coor[0]), int(coor[1])), (int(coor[2]), int(coor[3])), (0, 255, 0), 2)
 
@@ -379,7 +433,7 @@ def detect(save_img=False):
                     
 
             # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            # print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
@@ -404,11 +458,11 @@ def detect(save_img=False):
                     vid_writer.write(im0)
 
     if save_txt or save_img:
-        print('Results saved to %s' % os.getcwd() + os.sep + out)
+        # print('Results saved to %s' % os.getcwd() + os.sep + out)
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
 
-    print('Done. (%.3fs)' % (time.time() - t0))
+    # print('Done. (%.3fs)' % (time.time() - t0))
 
 
 if __name__ == '__main__':
@@ -429,7 +483,7 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     opt = parser.parse_args()
-    print(opt)
+    # print(opt)
 
     with torch.no_grad():
         detect()

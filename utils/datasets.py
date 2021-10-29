@@ -96,7 +96,7 @@ class LoadImages:  # for inference
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nF, path), end='')
+            # print('image %g/%g %s: ' % (self.count, self.nF, path), end='')
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -167,7 +167,7 @@ class LoadWebcam:  # for inference
         # Print
         assert ret_val, 'Camera Error %s' % self.pipe
         img_path = 'webcam.jpg'
-        print('webcam %g: ' % self.count, end='')
+        # print('webcam %g: ' % self.count, end='')
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -198,7 +198,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         self.sources = sources
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
-            print('%g/%g: %s... ' % (i + 1, n, s), end='')
+            # print('%g/%g: %s... ' % (i + 1, n, s), end='')
             cap = cv2.VideoCapture(0 if s == '0' else s)
             assert cap.isOpened(), 'Failed to open %s' % s
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -401,7 +401,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 s, nf, nm, ne, nd, n)
         assert nf > 0 or n == 20288, 'No labels found in %s. See %s' % (os.path.dirname(file) + os.sep, help_url)
         if not labels_loaded and n > 1000:
-            print('Saving labels to %s for faster future loading' % np_labels_path)
+            # print('Saving labels to %s for faster future loading' % np_labels_path)
             np.save(np_labels_path, self.labels)  # save for next time
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
